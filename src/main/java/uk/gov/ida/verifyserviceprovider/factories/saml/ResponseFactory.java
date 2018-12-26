@@ -42,6 +42,7 @@ import uk.gov.ida.verifyserviceprovider.validators.TimeRestrictionValidator;
 
 import java.security.KeyPair;
 import java.util.List;
+import java.util.Optional;
 
 public class ResponseFactory {
 
@@ -112,13 +113,12 @@ public class ResponseFactory {
 
     public MsaAssertionService createMsaAssertionService(
             ExplicitKeySignatureTrustEngine signatureTrustEngine,
+            SignatureValidatorFactory signatureValidatorFactory,
             DateTimeComparator dateTimeComparator
     ) {
-        MetadataBackedSignatureValidator metadataBackedSignatureValidator = createMetadataBackedSignatureValidator(signatureTrustEngine);
-        SamlMessageSignatureValidator samlMessageSignatureValidator = new SamlMessageSignatureValidator(metadataBackedSignatureValidator);
         TimeRestrictionValidator timeRestrictionValidator = new TimeRestrictionValidator(dateTimeComparator);
 
-        SamlAssertionsSignatureValidator assertionsSignatureValidator = new SamlAssertionsSignatureValidator(samlMessageSignatureValidator);
+        Optional<SamlAssertionsSignatureValidator> assertionsSignatureValidator = signatureValidatorFactory.getSignatureValidator(Optional.of(signatureTrustEngine));
         AssertionValidator assertionValidator = new AssertionValidator(
                 new InstantValidator(dateTimeComparator),
                 new SubjectValidator(timeRestrictionValidator),
@@ -127,21 +127,19 @@ public class ResponseFactory {
 
         return new MsaAssertionService(
                 assertionValidator,
-                assertionsSignatureValidator
+                assertionsSignatureValidator.orElseThrow(() -> new RuntimeException("Cannot create MSA signature validator"))
         );
     }
 
     public IdpAssertionService createIdpAssertionService(ExplicitKeySignatureTrustEngine signatureTrustEngine,
+                                                         SignatureValidatorFactory signatureValidatorFactory,
                                                          DateTimeComparator dateTimeComparator,
                                                          String hashingEntityId) {
 
-        MetadataBackedSignatureValidator metadataBackedSignatureValidator = createMetadataBackedSignatureValidator(signatureTrustEngine);
-        SamlMessageSignatureValidator samlMessageSignatureValidator = new SamlMessageSignatureValidator(metadataBackedSignatureValidator);
         TimeRestrictionValidator timeRestrictionValidator = new TimeRestrictionValidator(dateTimeComparator);
 
-
         return new IdpAssertionService(
-                new SamlAssertionsSignatureValidator(samlMessageSignatureValidator),
+                signatureValidatorFactory.getSignatureValidator(Optional.of(signatureTrustEngine)).orElseThrow(() -> new RuntimeException("cannot create")),
                 new SubjectValidator(timeRestrictionValidator),
                 new AssertionAttributeStatementValidator(),
                 new VerifyMatchingDatasetUnmarshaller(new AddressFactory()),
@@ -165,8 +163,8 @@ public class ResponseFactory {
                 new MatchingDatasetToNonMatchingAttributesMapper(),
                 new InstantValidator(dateTimeComparator),
                 new ConditionsValidator(timeRestrictionValidator, audienceRestrictionValidator),
-                eidasMetadataResolverRepository
-        );
+                eidasMetadataResolverRepository,
+                new SignatureValidatorFactory());
     }
 
     private MetadataBackedSignatureValidator createMetadataBackedSignatureValidator( ExplicitKeySignatureTrustEngine explicitKeySignatureTrustEngine ) {

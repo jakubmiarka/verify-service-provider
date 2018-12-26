@@ -17,6 +17,7 @@ import uk.gov.ida.shared.utils.manifest.ManifestReader;
 import uk.gov.ida.verifyserviceprovider.configuration.VerifyServiceProviderConfiguration;
 import uk.gov.ida.verifyserviceprovider.factories.saml.AuthnRequestFactory;
 import uk.gov.ida.verifyserviceprovider.factories.saml.ResponseFactory;
+import uk.gov.ida.verifyserviceprovider.factories.saml.SignatureValidatorFactory;
 import uk.gov.ida.verifyserviceprovider.healthcheck.MetadataHealthCheck;
 import uk.gov.ida.verifyserviceprovider.resources.GenerateAuthnRequestResource;
 import uk.gov.ida.verifyserviceprovider.resources.TranslateNonMatchingSamlResponseResource;
@@ -101,7 +102,7 @@ public class VerifyServiceProviderFactory {
         return new TranslateSamlResponseResource(
             responseFactory.createMatchingResponseService(
                 getHubSignatureTrustEngine(),
-                responseFactory.createMsaAssertionService(getMsaSignatureTrustEngine(), dateTimeComparator),
+                responseFactory.createMsaAssertionService(getMsaSignatureTrustEngine(), new SignatureValidatorFactory(), dateTimeComparator),
                 dateTimeComparator
             ),
             entityIdService
@@ -111,6 +112,7 @@ public class VerifyServiceProviderFactory {
     public TranslateNonMatchingSamlResponseResource getTranslateNonMatchingSamlResponseResource() {
         IdpAssertionService idpAssertionService = responseFactory.createIdpAssertionService(
                 getHubSignatureTrustEngine(),
+                new SignatureValidatorFactory(),
                 dateTimeComparator,
                 configuration.getHashingEntityId()
         );

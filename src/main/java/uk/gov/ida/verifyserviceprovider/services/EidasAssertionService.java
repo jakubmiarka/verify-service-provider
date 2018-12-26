@@ -2,6 +2,7 @@ package uk.gov.ida.verifyserviceprovider.services;
 
 import org.opensaml.saml.saml2.core.Assertion;
 import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
+import uk.gov.ida.saml.core.transformers.AuthnContextFactory;
 import uk.gov.ida.saml.core.transformers.MatchingDatasetUnmarshaller;
 import uk.gov.ida.saml.metadata.MetadataResolverRepository;
 import uk.gov.ida.saml.security.MetadataBackedSignatureValidator;
@@ -11,9 +12,11 @@ import uk.gov.ida.verifyserviceprovider.dto.LevelOfAssurance;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingAttributes;
 import uk.gov.ida.verifyserviceprovider.dto.TranslatedNonMatchingResponseBody;
 import uk.gov.ida.verifyserviceprovider.exceptions.SamlResponseValidationException;
+import uk.gov.ida.verifyserviceprovider.factories.saml.SignatureValidatorFactory;
 import uk.gov.ida.verifyserviceprovider.mappers.MatchingDatasetToNonMatchingAttributesMapper;
 import uk.gov.ida.verifyserviceprovider.validators.ConditionsValidator;
 import uk.gov.ida.verifyserviceprovider.validators.InstantValidator;
+import uk.gov.ida.verifyserviceprovider.validators.LevelOfAssuranceValidator;
 import uk.gov.ida.verifyserviceprovider.validators.SubjectValidator;
 
 import java.util.List;
@@ -26,6 +29,7 @@ public class EidasAssertionService extends AssertionServiceV2 {
     private final InstantValidator instantValidator;
     private final ConditionsValidator conditionsValidator;
     private final MetadataResolverRepository metadataResolverRepository;
+    private final SignatureValidatorFactory signatureValidatorFactory;
 
 
     public EidasAssertionService(
@@ -34,12 +38,13 @@ public class EidasAssertionService extends AssertionServiceV2 {
             MatchingDatasetToNonMatchingAttributesMapper mdsMapper,
             InstantValidator instantValidator,
             ConditionsValidator conditionsValidator,
-            MetadataResolverRepository metadataResolverRepository
-    ) {
+            MetadataResolverRepository metadataResolverRepository,
+            SignatureValidatorFactory signatureValidatorFactory) {
         super(subjectValidator, matchingDatasetUnmarshaller, mdsMapper);
         this.instantValidator = instantValidator;
         this.conditionsValidator = conditionsValidator;
         this.metadataResolverRepository = metadataResolverRepository;
+        this.signatureValidatorFactory = signatureValidatorFactory;
     }
 
 
@@ -63,10 +68,7 @@ public class EidasAssertionService extends AssertionServiceV2 {
     }
 
     private void validateCountryAssertion(Assertion assertion, String expectedInResponseTo, String entityId) {
-        metadataResolverRepository.getSignatureTrustEngine(assertion.getIssuer().getValue())
-                .map(MetadataBackedSignatureValidator::withoutCertificateChainValidation)
-                .map(SamlMessageSignatureValidator::new)
-                .map(SamlAssertionsSignatureValidator::new)
+        signatureValidatorFactory.getSignatureValidator(metadataResolverRepository.getSignatureTrustEngine(assertion.getIssuer().getValue()))
                 .orElseThrow(() -> new SamlResponseValidationException("Unable to find metadata resolver for entity Id " + assertion.getIssuer().getValue()))
                 .validate(singletonList(assertion), IDPSSODescriptor.DEFAULT_ELEMENT_NAME);
         instantValidator.validate(assertion.getIssueInstant(), "Country Assertion IssueInstant");
@@ -78,7 +80,7 @@ public class EidasAssertionService extends AssertionServiceV2 {
         String levelOfAssuranceString = extractLevelOfAssuranceUriFrom(countryAssertion);
 
         try {
-            return LevelOfAssurance.fromSamlValue(levelOfAssuranceString);  //TODO: If this works as-is, then we should move the method to the base class.
+            return LevelOfAssurance.fromSamlValue(new AuthnContextFactory().mapFromEidasToLoA(levelOfAssuranceString).getUri());
         } catch (Exception ex) {
             throw new SamlResponseValidationException(String.format("Level of assurance '%s' is not supported.", levelOfAssuranceString));
         }
