@@ -4,6 +4,7 @@ import org.opensaml.saml.saml2.core.Response;
 import org.opensaml.security.credential.Credential;
 import org.opensaml.xmlsec.signature.support.impl.ExplicitKeySignatureTrustEngine;
 import uk.gov.ida.saml.core.domain.AddressFactory;
+import uk.gov.ida.saml.core.transformers.EidasMatchingDatasetUnmarshaller;
 import uk.gov.ida.saml.core.transformers.VerifyMatchingDatasetUnmarshaller;
 import uk.gov.ida.saml.core.validators.assertion.AssertionAttributeStatementValidator;
 import uk.gov.ida.saml.deserializers.OpenSamlXMLObjectUnmarshaller;
@@ -159,7 +160,7 @@ public class ResponseFactory {
 
         return new EidasAssertionService(
                 new SubjectValidator(timeRestrictionValidator),
-                new VerifyMatchingDatasetUnmarshaller(new AddressFactory()),
+                new EidasMatchingDatasetUnmarshaller(),
                 new MatchingDatasetToNonMatchingAttributesMapper(),
                 new InstantValidator(dateTimeComparator),
                 new ConditionsValidator(timeRestrictionValidator, audienceRestrictionValidator),
