@@ -19,6 +19,7 @@ import uk.gov.ida.verifyserviceprovider.mappers.MatchingDatasetToNonMatchingAttr
 import uk.gov.ida.verifyserviceprovider.services.EidasAssertionService;
 import uk.gov.ida.verifyserviceprovider.validators.ConditionsValidator;
 import uk.gov.ida.verifyserviceprovider.validators.InstantValidator;
+import uk.gov.ida.verifyserviceprovider.validators.LevelOfAssuranceValidator;
 import uk.gov.ida.verifyserviceprovider.validators.SubjectValidator;
 
 import java.util.List;
@@ -68,6 +69,9 @@ public class EidasAssertionServiceTest {
     private ConditionsValidator conditionsValidator;
 
     @Mock
+    private LevelOfAssuranceValidator levelOfAssuranceValidator;
+
+    @Mock
     private MetadataResolverRepository metadataResolverRepository;
 
     @Mock
@@ -86,11 +90,13 @@ public class EidasAssertionServiceTest {
             mdsMapper,
             instantValidator,
             conditionsValidator,
+            levelOfAssuranceValidator,
             metadataResolverRepository,
             signatureValidatorFactory);
         doNothing().when(instantValidator).validate(any(), any());
         doNothing().when(subjectValidator).validate(any(), any());
         doNothing().when(conditionsValidator).validate(any(), any());
+        doNothing().when(levelOfAssuranceValidator).validate(any(), any());
         when(metadataResolverRepository.getResolverEntityIds()).thenReturn(asList(STUB_COUNTRY_ONE));
         when(signatureValidatorFactory.getSignatureValidator(any())).thenReturn(Optional.of(samlAssertionsSignatureValidator));
         when(samlAssertionsSignatureValidator.validate(any(), any())).thenReturn(null);
@@ -106,6 +112,7 @@ public class EidasAssertionServiceTest {
         verify(instantValidator, times(1)).validate(any(), any());
         verify(subjectValidator, times(1)).validate(any(), any());
         verify(conditionsValidator, times(1)).validate(any(), any());
+        verify(levelOfAssuranceValidator, times(1)).validate(any(), any());
     }
 
     @Test

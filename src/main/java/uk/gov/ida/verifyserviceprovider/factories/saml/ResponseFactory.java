@@ -128,6 +128,7 @@ public class ResponseFactory {
 
         return new MsaAssertionService(
                 assertionValidator,
+                new LevelOfAssuranceValidator(),
                 assertionsSignatureValidator.orElseThrow(() -> new RuntimeException("Cannot create MSA signature validator"))
         );
     }
@@ -164,6 +165,7 @@ public class ResponseFactory {
                 new MatchingDatasetToNonMatchingAttributesMapper(),
                 new InstantValidator(dateTimeComparator),
                 new ConditionsValidator(timeRestrictionValidator, audienceRestrictionValidator),
+                new LevelOfAssuranceValidator(),
                 eidasMetadataResolverRepository,
                 new SignatureValidatorFactory());
     }

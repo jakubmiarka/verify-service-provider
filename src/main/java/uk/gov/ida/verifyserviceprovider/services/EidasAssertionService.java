@@ -5,9 +5,6 @@ import org.opensaml.saml.saml2.metadata.IDPSSODescriptor;
 import uk.gov.ida.saml.core.transformers.AuthnContextFactory;
 import uk.gov.ida.saml.core.transformers.MatchingDatasetUnmarshaller;
 import uk.gov.ida.saml.metadata.MetadataResolverRepository;
-import uk.gov.ida.saml.security.MetadataBackedSignatureValidator;
-import uk.gov.ida.saml.security.SamlAssertionsSignatureValidator;
-import uk.gov.ida.saml.security.SamlMessageSignatureValidator;
 import uk.gov.ida.verifyserviceprovider.dto.LevelOfAssurance;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingAttributes;
 import uk.gov.ida.verifyserviceprovider.dto.TranslatedNonMatchingResponseBody;
@@ -28,6 +25,7 @@ public class EidasAssertionService extends AssertionServiceV2 {
 
     private final InstantValidator instantValidator;
     private final ConditionsValidator conditionsValidator;
+    private final LevelOfAssuranceValidator levelOfAssuranceValidator;
     private final MetadataResolverRepository metadataResolverRepository;
     private final SignatureValidatorFactory signatureValidatorFactory;
 
@@ -38,11 +36,13 @@ public class EidasAssertionService extends AssertionServiceV2 {
             MatchingDatasetToNonMatchingAttributesMapper mdsMapper,
             InstantValidator instantValidator,
             ConditionsValidator conditionsValidator,
+            LevelOfAssuranceValidator levelOfAssuranceValidator,
             MetadataResolverRepository metadataResolverRepository,
             SignatureValidatorFactory signatureValidatorFactory) {
         super(subjectValidator, matchingDatasetUnmarshaller, mdsMapper);
         this.instantValidator = instantValidator;
         this.conditionsValidator = conditionsValidator;
+        this.levelOfAssuranceValidator = levelOfAssuranceValidator;
         this.metadataResolverRepository = metadataResolverRepository;
         this.signatureValidatorFactory = signatureValidatorFactory;
     }
@@ -59,6 +59,7 @@ public class EidasAssertionService extends AssertionServiceV2 {
         validateCountryAssertion(countryAssertion, expectedInResponseTo, entityId);
 
         LevelOfAssurance levelOfAssurance = extractLevelOfAssuranceFrom(countryAssertion);
+        levelOfAssuranceValidator.validate(levelOfAssurance, expectedLevelOfAssurance);
 
         String nameID = getNameIdFrom(countryAssertion);
 
