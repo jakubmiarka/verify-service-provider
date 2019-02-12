@@ -5,16 +5,16 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.constraints.NotNull;
-import java.time.LocalDateTime;
+import org.joda.time.DateTime;
 
 public class MatchingAttribute {
     @NotNull
     @JsonProperty
     private String value;
     @JsonProperty @JsonInclude(Include.NON_NULL)
-    private LocalDateTime from;
+    private DateTime from;
     @JsonProperty @JsonInclude(Include.NON_NULL)
-    private LocalDateTime to;
+    private DateTime to;
     @NotNull
     @JsonProperty
     private boolean verified;
@@ -25,11 +25,11 @@ public class MatchingAttribute {
         return value;
     }
 
-    public LocalDateTime getFrom() {
+    public DateTime getFrom() {
         return from;
     }
 
-    public LocalDateTime getTo() {
+    public DateTime getTo() {
         return to;
     }
 
@@ -40,8 +40,8 @@ public class MatchingAttribute {
     public MatchingAttribute(
             final String value,
             final boolean verified,
-            final LocalDateTime from,
-            final LocalDateTime to) {
+            final DateTime from,
+            final DateTime to) {
 
         this.value = value;
         this.verified = verified;

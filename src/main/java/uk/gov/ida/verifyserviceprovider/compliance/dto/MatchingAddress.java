@@ -2,7 +2,7 @@ package uk.gov.ida.verifyserviceprovider.compliance.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.time.LocalDateTime;
+import org.joda.time.DateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -11,9 +11,9 @@ public class MatchingAddress {
     @JsonProperty
     private boolean verified;
     @JsonProperty
-    private LocalDateTime from;
+    private DateTime from;
     @JsonProperty
-    private LocalDateTime to;
+    private DateTime to;
     @JsonProperty
     private Optional<String> postCode;
     @JsonProperty
@@ -27,8 +27,8 @@ public class MatchingAddress {
 
     public MatchingAddress(
         final boolean verified,
-        final LocalDateTime from,
-        final LocalDateTime to,
+        final DateTime from,
+        final DateTime to,
         String postCode,
         List<String> lines,
         String internationalPostCode,
@@ -47,11 +47,11 @@ public class MatchingAddress {
         return verified;
     }
 
-    public LocalDateTime getFrom() {
+    public DateTime getFrom() {
         return from;
     }
 
-    public LocalDateTime getTo() {
+    public DateTime getTo() {
         return to;
     }
 

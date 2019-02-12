@@ -36,8 +36,9 @@ import uk.gov.ida.verifyserviceprovider.services.ComplianceToolService;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 import java.net.URI;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -96,8 +97,8 @@ public class ComplianceToolModeAcceptanceTest {
     private static MatchingDataset createMatchingDataset(String firstname, String surname) {
         final String laterFromDateString = "2015-10-02T09:32:14.967";
         final String laterToDateString = "2018-03-03T10:20:50.163";
-        final LocalDateTime laterFromDate = LocalDateTime.parse(laterFromDateString);
-        final LocalDateTime laterToDate = LocalDateTime.parse(laterToDateString);
+        final DateTime laterFromDate = DateTime.parse(laterFromDateString);
+        final DateTime laterToDate = DateTime.parse(laterToDateString);
         return new MatchingDatasetBuilder().withFirstName(firstname, true, MatchingDatasetBuilder.standardFromDate, MatchingDatasetBuilder.standardToDate)
                 .withSurnames(
                         new MatchingAttribute(surname, true, MatchingDatasetBuilder.standardFromDate, MatchingDatasetBuilder.standardToDate),
@@ -242,16 +243,16 @@ public class ComplianceToolModeAcceptanceTest {
 
     private void checkMatchingDatasetAddress(JSONObject attributes, int index, List<MatchingAddress> addresses) {
         MatchingAddress address = addresses.get(index);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = address.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        String toDate = address.getTo().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+        String fromDate = formatter.print(address.getFrom()).replace(" ", "T");
+        String toDate = formatter.print(address.getTo()).replace(" ", "T");
         MdsValueChecker.checkMdsValueOfAddress(index, address.getLines(), address.getPostCode().orElse(null), address.getInternationalPostCode().orElse(""), address.isVerified(), fromDate, toDate, attributes);
     }
 
     private void checkMatchingDatasetListAttribute(JSONObject attributes, String attributeName, int index, MatchingAttribute expectedAttribute) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = expectedAttribute.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        String toDate = expectedAttribute.getTo().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+        String fromDate = formatter.print(expectedAttribute.getFrom()).replace(" ", "T");
+        String toDate = formatter.print(expectedAttribute.getTo()).replace(" ", "T");
         MdsValueChecker.checkMdsValueInArrayAttribute(attributeName, index, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
     }
 
@@ -261,9 +262,9 @@ public class ComplianceToolModeAcceptanceTest {
     }
 
     private void checkMatchingDatasetAttribute(JSONObject attributes, String attributeName, MatchingAttribute expectedAttribute) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = expectedAttribute.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        String toDate = expectedAttribute.getTo().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss");
+        String fromDate = formatter.print(expectedAttribute.getFrom()).replace(" ", "T");
+        String toDate = formatter.print(expectedAttribute.getTo()).replace(" ", "T");
         MdsValueChecker.checkMdsValueOfAttribute(attributeName, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
     }
 
