@@ -4,14 +4,18 @@ import org.assertj.core.api.Assertions;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import uk.gov.ida.verifyserviceprovider.compliance.dto.MatchingAddress;
+import uk.gov.ida.verifyserviceprovider.compliance.dto.MatchingAttribute;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
 public class MdsValueChecker {
 
-    public static void checkMdsValueOfAttribute(
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+    private static void checkMdsValueOfAttribute(
             String attributeName,
             String expectedValue,
             boolean expectedIsVerified,
@@ -23,25 +27,14 @@ public class MdsValueChecker {
         checkMdsValueInJsonObject(attribute, expectedValue, expectedIsVerified, expectedFromDateString, expectedToDateString);
     }
 
-    public static void checkMdsValueOfAttributeWithoutDates(
-            String attributeName,
-            String expectedValue,
-            boolean expectedIsVerified,
-            JSONObject attributes
-    ) {
-        JSONObject attribute = attributes.getJSONObject(attributeName);
-        checkMdsValueInJsonObject(attribute, expectedValue, expectedIsVerified);
-    }
-
     public static void checkMdsValueOfAddress(
             int index,
             JSONObject attributes,
             MatchingAddress matchingAddress
     ) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = matchingAddress.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
+        String fromDate = convertDateTimeToString(matchingAddress.getFrom());
         String toDate = Optional.ofNullable(matchingAddress.getTo())
-                .map((dt) -> dt.toLocalDate().atStartOfDay().format(formatter).replace(" ", "T"))
+                .map(MdsValueChecker::convertDateTimeToString)
                 .orElse(null);
         checkMdsValueOfAddress(
                 index,
@@ -56,7 +49,7 @@ public class MdsValueChecker {
         );
     }
 
-    public static void checkMdsValueOfAddress(
+    private static void checkMdsValueOfAddress(
             int index,
             List<String> lines,
             Optional<String> postcode,
@@ -92,7 +85,7 @@ public class MdsValueChecker {
         }
     }
 
-    public static void checkMdsValueInArrayAttribute(
+    private static void checkMdsValueInArrayAttribute(
             String attributeName,
             int index,
             String expectedValue,
@@ -118,7 +111,7 @@ public class MdsValueChecker {
         checkMdsValueInJsonObject(mdsObjectJson, expectedValue, expectedIsVerified);
     }
 
-    public static void checkMdsValueInJsonObject(
+    private static void checkMdsValueInJsonObject(
             JSONObject jsonObject,
             String expectedValue,
             boolean expectedIsVerified,
@@ -129,7 +122,7 @@ public class MdsValueChecker {
         checkMdsMetadataInJsonObject(jsonObject, expectedIsVerified, expectedFromDateString, expectedToDateString);
     }
 
-    public static void checkMdsMetadataInJsonObject(
+    private static void checkMdsMetadataInJsonObject(
             JSONObject jsonObject,
             boolean expectedIsVerified,
             String expectedFromDateString,
@@ -142,7 +135,7 @@ public class MdsValueChecker {
         }
     }
 
-    public static void checkMdsValueInJsonObject(
+    private static void checkMdsValueInJsonObject(
             JSONObject jsonObject,
             String expectedValue,
             boolean expectedIsVerified
@@ -151,12 +144,35 @@ public class MdsValueChecker {
         checkMdsMetadataInJsonObject(jsonObject, expectedIsVerified);
     }
 
-    public static void checkMdsMetadataInJsonObject(
+    private static void checkMdsMetadataInJsonObject(
             JSONObject jsonObject,
             boolean expectedIsVerified
     ) {
         Assertions.assertThat(jsonObject.getBoolean("verified")).isEqualTo(expectedIsVerified);
         Assertions.assertThat(jsonObject.has("from")).isFalse();
         Assertions.assertThat(jsonObject.has("to")).isFalse();
+    }
+
+    public static void checkMatchingDatasetListAttribute(JSONObject attributes, String attributeName, int index, MatchingAttribute expectedAttribute) {
+        String fromDate = convertDateTimeToString(expectedAttribute.getFrom());
+        String toDate = Optional.ofNullable(expectedAttribute.getTo())
+                .map(MdsValueChecker::convertDateTimeToString)
+                .orElse(null);
+        checkMdsValueInArrayAttribute(attributeName, index, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
+    }
+
+    public static void checkMatchingDatasetListAttribute(JSONObject attributes, String attributeName, int index, List<MatchingAttribute> attributeList) {
+        MatchingAttribute expectedAttribute = attributeList.get(index) ;
+        checkMatchingDatasetListAttribute(attributes, attributeName, index, expectedAttribute);
+    }
+
+    public static void checkMatchingDatasetAttribute(JSONObject attributes, String attributeName, MatchingAttribute expectedAttribute) {
+        String fromDate = convertDateTimeToString(expectedAttribute.getFrom());
+        String toDate = Optional.ofNullable(expectedAttribute.getTo()).map(MdsValueChecker::convertDateTimeToString).orElse(null);
+        checkMdsValueOfAttribute(attributeName, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
+    }
+
+    private static String convertDateTimeToString(LocalDateTime date) {
+        return date.toLocalDate().atStartOfDay().format(DATE_TIME_FORMATTER);
     }
 }

@@ -13,7 +13,6 @@ import uk.gov.ida.verifyserviceprovider.dto.NonMatchingAttributes;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingVerifiableAttribute;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingVerifiableAttributeBuilder;
 
-import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -291,9 +290,9 @@ public class MatchingDatasetToNonMatchingAttributesMapperTest {
 
     @Test
     public void sortTheListByToDateThenIsVerifiedThenFromDate() {
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime fiveDaysAgo = now.minusDays(5);
-        LocalDateTime threeDaysAgo = now.minusDays(3);
+        java.time.LocalDate now = java.time.LocalDate.now();
+        java.time.LocalDate fiveDaysAgo = now.minusDays(5);
+        java.time.LocalDate threeDaysAgo = now.minusDays(3);
         NonMatchingVerifiableAttribute<String> attributeOne = new NonMatchingVerifiableAttributeBuilder().withVerified(true).withTo(null).withFrom(now).build();
         NonMatchingVerifiableAttribute<String> attributeTwo = new NonMatchingVerifiableAttributeBuilder().withVerified(true).withTo(null).withFrom(fiveDaysAgo).build();
         NonMatchingVerifiableAttribute<String> attributeThree = new NonMatchingVerifiableAttributeBuilder().withVerified(false).withTo(null).withFrom(now).build();

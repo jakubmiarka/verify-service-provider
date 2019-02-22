@@ -37,7 +37,6 @@ import javax.ws.rs.client.Client;
 import javax.ws.rs.core.Response;
 import java.net.URI;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -288,36 +287,17 @@ public class ComplianceToolModeAcceptanceTest {
     }
 
     private void checkMatchingDatasetMatches(JSONObject attributes, MatchingDataset matchingDataset) {
-        checkMatchingDatasetListAttribute(attributes, "firstNames", 0, matchingDataset.getFirstName());
-        checkMatchingDatasetListAttribute(attributes, "middleNames", 0, matchingDataset.getMiddleNames());
+        MdsValueChecker.checkMatchingDatasetListAttribute(attributes, "firstNames", 0, matchingDataset.getFirstName());
+        MdsValueChecker.checkMatchingDatasetListAttribute(attributes, "middleNames", 0, matchingDataset.getMiddleNames());
         List<MatchingAttribute> sortedSurnames = matchingDataset.getSurnames()
                 .stream()
                 .sorted(Comparator.comparing(MatchingAttribute::getFrom, Comparator.reverseOrder()))
                 .collect(Collectors.toList());
-        checkMatchingDatasetListAttribute(attributes, "surnames", 0, sortedSurnames);
-        checkMatchingDatasetListAttribute(attributes, "surnames", 1, sortedSurnames);
-        checkMatchingDatasetListAttribute(attributes, "datesOfBirth", 0, matchingDataset.getDateOfBirth());
-        checkMatchingDatasetAttribute(attributes, "gender", matchingDataset.getGender());
+        MdsValueChecker.checkMatchingDatasetListAttribute(attributes, "surnames", 0, sortedSurnames);
+        MdsValueChecker.checkMatchingDatasetListAttribute(attributes, "surnames", 1, sortedSurnames);
+        MdsValueChecker.checkMatchingDatasetListAttribute(attributes, "datesOfBirth", 0, matchingDataset.getDateOfBirth());
+        MdsValueChecker.checkMatchingDatasetAttribute(attributes, "gender", matchingDataset.getGender());
         MdsValueChecker.checkMdsValueOfAddress(0, attributes, matchingDataset.getAddresses().get(0));
-    }
-
-    private void checkMatchingDatasetListAttribute(JSONObject attributes, String attributeName, int index, MatchingAttribute expectedAttribute) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = expectedAttribute.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        String toDate = expectedAttribute.getTo().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        MdsValueChecker.checkMdsValueInArrayAttribute(attributeName, index, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
-    }
-
-    private void checkMatchingDatasetListAttribute(JSONObject attributes, String attributeName, int index, List<MatchingAttribute> attributeList) {
-        MatchingAttribute expectedAttribute = attributeList.get(index) ;
-        checkMatchingDatasetListAttribute(attributes, attributeName, index, expectedAttribute);
-    }
-
-    private void checkMatchingDatasetAttribute(JSONObject attributes, String attributeName, MatchingAttribute expectedAttribute) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-        String fromDate = expectedAttribute.getFrom().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        String toDate = expectedAttribute.getTo().toLocalDate().atStartOfDay().format(formatter).replace(" ", "T");
-        MdsValueChecker.checkMdsValueOfAttribute(attributeName, expectedAttribute.getValue(), expectedAttribute.isVerified(), fromDate, toDate, attributes);
     }
 
 }

@@ -1,5 +1,6 @@
 package uk.gov.ida.verifyserviceprovider.mappers;
 
+import org.joda.time.DateTime;
 import uk.gov.ida.saml.core.domain.Address;
 import uk.gov.ida.saml.core.domain.Gender;
 import uk.gov.ida.saml.core.domain.MatchingDataset;
@@ -10,7 +11,6 @@ import uk.gov.ida.verifyserviceprovider.dto.NonMatchingAttributes;
 import uk.gov.ida.verifyserviceprovider.dto.NonMatchingVerifiableAttribute;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -62,17 +62,17 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
 
 
     public static <T> Comparator<NonMatchingVerifiableAttribute<T>> attributeComparator() {
-        return Comparator.<NonMatchingVerifiableAttribute<T>, LocalDateTime>comparing(NonMatchingVerifiableAttribute::getTo, Comparator.nullsFirst(Comparator.reverseOrder()))
+        return Comparator.<NonMatchingVerifiableAttribute<T>, LocalDate>comparing(NonMatchingVerifiableAttribute::getTo, Comparator.nullsFirst(Comparator.reverseOrder()))
                 .thenComparing(NonMatchingVerifiableAttribute::isVerified, Comparator.reverseOrder())
                 .thenComparing(NonMatchingVerifiableAttribute::getFrom, Comparator.nullsLast(Comparator.reverseOrder()));
     }
 
     private <T> NonMatchingVerifiableAttribute<T> mapToNonMatchingVerifiableAttribute(SimpleMdsValue<T> simpleMdsValueOptional) {
-        LocalDateTime from = Optional.ofNullable(simpleMdsValueOptional.getFrom())
+        LocalDate from = Optional.ofNullable(simpleMdsValueOptional.getFrom())
                 .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
                 .orElse(null);
 
-        LocalDateTime to = Optional.ofNullable(simpleMdsValueOptional.getTo())
+        LocalDate to = Optional.ofNullable(simpleMdsValueOptional.getTo())
                 .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
                 .orElse(null);
 
@@ -96,31 +96,27 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
             input.getUPRN().orElse(null)
         );
 
-        LocalDateTime from = Optional.ofNullable(input.getFrom())
+        LocalDate from = Optional.ofNullable(input.getFrom())
                 .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
                 .orElse(null);
 
-        LocalDateTime to = input.getTo()
+        LocalDate to = input.getTo()
                 .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
                 .orElse(null);
 
         return new NonMatchingVerifiableAttribute<>(
-            transformedAddress,
-            input.isVerified(),
-            from,
-            to
+                transformedAddress,
+                input.isVerified(),
+                from,
+                to
         );
     }
 
-    private static LocalDateTime convertJodaDateTimeToJavaLocalDateTime(org.joda.time.DateTime jodaDateTime) {
-        return LocalDateTime.of(
+    private static LocalDate convertJodaDateTimeToJavaLocalDateTime(DateTime jodaDateTime) {
+        return LocalDate.of(
             jodaDateTime.getYear(),
             jodaDateTime.getMonthOfYear(),
-            jodaDateTime.getDayOfMonth(),
-            jodaDateTime.getHourOfDay(),
-            jodaDateTime.getMinuteOfHour(),
-            jodaDateTime.getSecondOfMinute(),
-            jodaDateTime.getMillisOfSecond()
+            jodaDateTime.getDayOfMonth()
         );
     }
 
