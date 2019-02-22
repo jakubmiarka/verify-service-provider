@@ -17,25 +17,27 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MatchingDatasetToNonMatchingAttributesMapper {
+    static <T> Comparator<NonMatchingVerifiableAttribute<T>> attributeComparator() {
+        return Comparator.<NonMatchingVerifiableAttribute<T>, LocalDate>comparing(NonMatchingVerifiableAttribute::getTo, Comparator.nullsFirst(Comparator.reverseOrder()))
+                .thenComparing(NonMatchingVerifiableAttribute::isVerified, Comparator.reverseOrder())
+                .thenComparing(NonMatchingVerifiableAttribute::getFrom, Comparator.nullsLast(Comparator.reverseOrder()));
+    }
 
     public NonMatchingAttributes mapToNonMatchingAttributes(MatchingDataset matchingDataset) {
-        List<NonMatchingVerifiableAttribute<String>> firstNames = convertTransliterableNameAttributes(matchingDataset.getFirstNames());
-        List<NonMatchingVerifiableAttribute<LocalDate>> datesOfBirth = convertDateOfBirths(matchingDataset.getDateOfBirths());
-        List<NonMatchingVerifiableAttribute<String>> middleNames = convertNameAttributes(matchingDataset.getMiddleNames());
-        List<NonMatchingVerifiableAttribute<String>> surnames = convertTransliterableNameAttributes(matchingDataset.getSurnames());
-        NonMatchingVerifiableAttribute<Gender> gender = matchingDataset.getGender()
-                .map(this::mapToNonMatchingVerifiableAttribute)
-                .orElse(null);
-        List<NonMatchingVerifiableAttribute<NonMatchingAddress>> addresses = mapAddresses(matchingDataset.getAddresses());
-
         return new NonMatchingAttributes(
-            firstNames,
-            middleNames,
-            surnames,
-            datesOfBirth,
-            gender,
-            addresses
+                convertTransliterableNameAttributes(matchingDataset.getFirstNames()),
+                convertNameAttributes(matchingDataset.getMiddleNames()),
+                convertTransliterableNameAttributes(matchingDataset.getSurnames()),
+                convertDateOfBirths(matchingDataset.getDateOfBirths()),
+                convertToGenderAttribute(matchingDataset),
+                mapAddresses(matchingDataset.getAddresses())
         );
+    }
+
+    private NonMatchingVerifiableAttribute<Gender> convertToGenderAttribute(MatchingDataset matchingDataset) {
+        return matchingDataset.getGender()
+                    .map(this::mapToNonMatchingVerifiableAttribute)
+                    .orElse(null);
     }
 
     private List<NonMatchingVerifiableAttribute<String>> convertNameAttributes(List<SimpleMdsValue<String>> values) {
@@ -47,7 +49,7 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
 
     private List<NonMatchingVerifiableAttribute<LocalDate>> convertDateOfBirths(List<SimpleMdsValue<org.joda.time.LocalDate>> values) {
         return values.stream()
-                .map(MatchingDatasetToNonMatchingAttributesMapper::convertWrappedJodaLocalDateToJavaLocalDate)
+                .map(this::convertWrappedJodaLocalDateToJavaLocalDate)
                 .map(this::mapToNonMatchingVerifiableAttribute)
                 .sorted(attributeComparator())
                 .collect(Collectors.toList());
@@ -60,25 +62,13 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
                 .collect(Collectors.toList());
     }
 
-
-    public static <T> Comparator<NonMatchingVerifiableAttribute<T>> attributeComparator() {
-        return Comparator.<NonMatchingVerifiableAttribute<T>, LocalDate>comparing(NonMatchingVerifiableAttribute::getTo, Comparator.nullsFirst(Comparator.reverseOrder()))
-                .thenComparing(NonMatchingVerifiableAttribute::isVerified, Comparator.reverseOrder())
-                .thenComparing(NonMatchingVerifiableAttribute::getFrom, Comparator.nullsLast(Comparator.reverseOrder()));
-    }
-
-    private <T> NonMatchingVerifiableAttribute<T> mapToNonMatchingVerifiableAttribute(SimpleMdsValue<T> simpleMdsValueOptional) {
-        LocalDate from = Optional.ofNullable(simpleMdsValueOptional.getFrom())
-                .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
-                .orElse(null);
-
-        LocalDate to = Optional.ofNullable(simpleMdsValueOptional.getTo())
-                .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
-                .orElse(null);
+    private <T> NonMatchingVerifiableAttribute<T> mapToNonMatchingVerifiableAttribute(SimpleMdsValue<T> simpleMdsValue) {
+        LocalDate from = convertToLocalDate(simpleMdsValue.getFrom());
+        LocalDate to = convertToLocalDate(simpleMdsValue.getTo());
 
         return new NonMatchingVerifiableAttribute<>(
-            simpleMdsValueOptional.getValue(),
-            simpleMdsValueOptional.isVerified(),
+            simpleMdsValue.getValue(),
+            simpleMdsValue.isVerified(),
             from,
             to
         );
@@ -96,12 +86,10 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
             input.getUPRN().orElse(null)
         );
 
-        LocalDate from = Optional.ofNullable(input.getFrom())
-                .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
-                .orElse(null);
+        LocalDate from = convertToLocalDate(input.getFrom());
 
         LocalDate to = input.getTo()
-                .map(MatchingDatasetToNonMatchingAttributesMapper::convertJodaDateTimeToJavaLocalDateTime)
+                .map(this::convertToLocalDate)
                 .orElse(null);
 
         return new NonMatchingVerifiableAttribute<>(
@@ -112,19 +100,21 @@ public class MatchingDatasetToNonMatchingAttributesMapper {
         );
     }
 
-    private static LocalDate convertJodaDateTimeToJavaLocalDateTime(DateTime jodaDateTime) {
-        return LocalDate.of(
-            jodaDateTime.getYear(),
-            jodaDateTime.getMonthOfYear(),
-            jodaDateTime.getDayOfMonth()
-        );
+    private LocalDate convertToLocalDate(DateTime dateTime) {
+        return Optional.ofNullable(dateTime)
+                .map(jodaDateTime -> LocalDate.of(
+                        jodaDateTime.getYear(),
+                        jodaDateTime.getMonthOfYear(),
+                        jodaDateTime.getDayOfMonth()
+                ))
+                .orElse(null);
     }
 
-    private static LocalDate convertJodaLocalDateToJavaLocalDate(org.joda.time.LocalDate jodaDate) {
+    private LocalDate convertJodaLocalDateToJavaLocalDate(org.joda.time.LocalDate jodaDate) {
         return LocalDate.of(jodaDate.getYear(), jodaDate.getMonthOfYear(), jodaDate.getDayOfMonth());
     }
 
-    private static SimpleMdsValue<LocalDate> convertWrappedJodaLocalDateToJavaLocalDate(SimpleMdsValue<org.joda.time.LocalDate> wrappedJodaDate) {
+    private SimpleMdsValue<LocalDate> convertWrappedJodaLocalDateToJavaLocalDate(SimpleMdsValue<org.joda.time.LocalDate> wrappedJodaDate) {
         LocalDate javaLocalDate = convertJodaLocalDateToJavaLocalDate(wrappedJodaDate.getValue());
         return new SimpleMdsValue<>(javaLocalDate, wrappedJodaDate.getFrom(), wrappedJodaDate.getTo(), wrappedJodaDate.isVerified());
     }
